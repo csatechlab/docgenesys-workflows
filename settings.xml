@@ -6,7 +6,7 @@
   <!-- Authentication to CodeArtifact repository -->
   <servers>
     <server>
-      <id>codeartifact</id>
+      <id>codeartifact-mirror</id>
       <username>aws</username>
       <password>${CODEARTIFACT_TOKEN}</password>
     </server>
@@ -22,3 +22,4 @@
   </mirrors>
 
 </settings>
+
