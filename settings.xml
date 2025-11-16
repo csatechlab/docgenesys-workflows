@@ -4,32 +4,25 @@
                               https://maven.apache.org/xsd/settings-1.0.0.xsd">
 
   <!-- =========================
-       Mirror / Repository settings
-       ========================= -->
- <repositories>
-    <repository>
-        <id>codeartifact</id>
-        <url>https://csatechlabs-artifactory-851725569228.d.codeartifact.us-east-1.amazonaws.com/maven/csa-artifactory/</url>
-    </repository>
-</repositories>
-
-
-  <!-- =========================
-       Repositories Authentication
+       SERVER AUTHENTICATION
        ========================= -->
   <servers>
     <server>
-      <id>codeartifact</id> <!-- Must match <repository><id> in pom.xml -->
+      <id>csa-artifactory</id>
       <username>aws</username>
-      <!-- Option 1: Paste token directly (expires in 12h) -->
-      <password>${CODEARTIFACT_AUTH_TOKEN}</password>
-
-      <!-- Option 2: Use environment variable for token -->
-      <!--<password>${env:CODEARTIFACT_AUTH_TOKEN}</password> -->
+      <password>${CODEARTIFACT_TOKEN}</password>
     </server>
   </servers>
 
-
+  <!-- =========================
+       MIRRORS
+       ========================= -->
+  <mirrors>
+    <mirror>
+      <id>csa-artifactory-mirror</id>
+      <url>https://csatechlabs-artifactory-851725569228.d.codeartifact.us-east-1.amazonaws.com/maven/csa-artifactory/</url>
+      <mirrorOf>*</mirrorOf>
+    </mirror>
+  </mirrors>
 
 </settings>
-
