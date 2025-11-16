@@ -77,6 +77,7 @@ jobs:
       # 7. Build using Maven + CodeArtifact
       - name: Build (Maven)
         run: mvn -s ~/.m2/settings.xml clean install -DskipTests
+        working-directory: ${{ github.workspace }}
 
       # 8. Build Docker Image
       - name: Build Docker Image
