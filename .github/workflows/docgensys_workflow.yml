@@ -26,17 +26,29 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source
+
+      # 1. Checkout caller repo
+      - name: Checkout source repo
         uses: actions/checkout@v3
         with:
           ref: ${{ inputs.branch_name }}
 
+      # 2. Checkout this workflow repository (to access settings.xml)
+      - name: Checkout workflow repository
+        uses: actions/checkout@v3
+        with:
+          repository: csatechlab/docgenesys-workflows
+          ref: main
+          path: workflow-repo
+
+      # 3. Setup Java
       - name: Setup JDK
         uses: actions/setup-java@v3
         with:
           java-version: '21'
           distribution: 'temurin'
 
+      # 4. Configure AWS creds
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -44,34 +56,39 @@ jobs:
           aws-secret-access-key: ${{ secrets.NPD_AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.NPD_AWS_REGION }}
 
-      - name: Install AWS CLI v2
+      # 5. Get CodeArtifact Token
+      - name: Get CodeArtifact Token
+        id: codeartifact
         run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
-
-      - name: Override PATH to use AWS CLI v2
-        run: echo "/usr/local/bin" >> $GITHUB_PATH
-
-      - name: Check AWS CLI version
-        run: aws --version
-      
-      - name: Login to AWS CodeArtifact
-        run: |
-          aws codeartifact login \
-            --tool maven \
-            --repository csa-artifactory \
+          TOKEN=$(aws codeartifact get-authorization-token \
             --domain csatechlabs-artifactory \
-            --domain-owner ${{ secrets.NPD_AWS_ACCOUNT_ID }}
+            --domain-owner ${{ secrets.NPD_AWS_ACCOUNT_ID }} \
+            --query authorizationToken \
+            --output text)
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
 
-      - name: Build with Maven
-        run: mvn clean install -DskipTests
+      # 6. Copy settings.xml and replace token
+      - name: Configure Maven settings.xml
+        run: |
+          mkdir -p ~/.m2
+          cp workflow-repo/settings.xml ~/.m2/settings.xml
+          sed -i "s|\${CODEARTIFACT_TOKEN}|${{ steps.codeartifact.outputs.token }}|g" ~/.m2/settings.xml
 
+      # 7. Build using Maven + CodeArtifact
+      - name: Build (Maven)
+        run: mvn -s ~/.m2/settings.xml clean install -DskipTests
+
+      # 8. Build Docker Image
       - name: Build Docker Image
-        run: docker build -t ${{ secrets.NPD_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.NPD_AWS_REGION }}.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }} .
+        run: |
+          docker build -t \
+            ${{ secrets.NPD_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.NPD_AWS_REGION }}.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }} .
 
+      # 9. Push Docker Image
       - name: Push Docker Image
         run: |
           aws ecr get-login-password --region ${{ secrets.NPD_AWS_REGION }} |
-          docker login --username AWS --password-stdin ${{ secrets.NPD_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.NPD_AWS_REGION }}.amazonaws.com
-          docker push ${{ secrets.NPD_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.NPD_AWS_REGION }}.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }}
+          docker login --username AWS --password-stdin \
+          ${{ secrets.NPD_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.NPD_AWS_REGION }}.amazonaws.com
+          docker push \
+            ${{ secrets.NPD_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.NPD_AWS_REGION }}.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }}
