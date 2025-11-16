@@ -1,0 +1,34 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                              https://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <!-- =========================
+       Mirror / Repository settings
+       ========================= -->
+ <repositories>
+    <repository>
+        <id>codeartifact</id>
+        <url>https://csatechlabs-artifactory-851725569228.d.codeartifact.us-east-1.amazonaws.com/maven/csa-artifactory/</url>
+    </repository>
+</repositories>
+
+
+  <!-- =========================
+       Repositories Authentication
+       ========================= -->
+  <servers>
+    <server>
+      <id>codeartifact</id> <!-- Must match <repository><id> in pom.xml -->
+      <username>aws</username>
+      <!-- Option 1: Paste token directly (expires in 12h) -->
+      <password>eyJ2ZXIiOjEsImlzdSI6MTc2MDIzNzMwNCwiZW5jIjoiQTEyOEdDTSIsInRhZyI6IkhSUUQ2bklRdkhFZnM1cHRxRUxkdVEiLCJleHAiOjE3NjAyODA1MDQsImFsZyI6IkExMjhHQ01LVyIsIml2IjoiQk9DMEk4MURGTkN4RHVUUCJ9.pYIjnOOhuqh5ylqP0-RLrg.Y4_VEUrqMjd0yd3i.74koUxu5EJ9_aTGky7KW7fs489wruqPqe-LDHPcEUoxNRbQX9o7n2gdmJ4sSpL5EXzDjZPmQS3r8hizOkHflA5cVj8gD2C63BfuD4mnxz2DYa-PBo7R1w4LlrrYfvmrNUUnbGsCf767Iw2G_bXaetY-QtoUlSO-TFEnA3Vl5UIGJwU0J7YxjsDNqwythOJNWVp2fSUdwvQC26Z1lJUnsNctLXS-nMACQ6HcQqaEPKxfkQXQr4YGL7upRAA8Tng74nJonmptnKPryyMtRm4OioA2bRHXXqiJRX3s4DW8mLfGtVxIvsQUglG_yyBJpAyJpjDgtqwjCRxYCkBL459yL33wVizV3ALCt_sXKHf-39KaO0mzfiLFu-74h-FDiPOnIYVroOWDCPj_t_27NLBOhGGeOO36VZ-B-956EN8Wkd9wzQISXVKaofe-04ehFa7EdmfAc8m5QTiqre3KObwIZDx6WoItoYuOXHj6ZyPukv3OcHNu9djkezM6T21TTCog5Xsp6VkxNbhiywLdNrW6NeGsqh4CqjiRBVAF0FhCczap1f0Pj48WkHbIE332LW-aPU9MAiMi3mFPouLdsQliTM-W7Rx9id_nb1smCr0Wo0RgKbEFuvjAj46cnNeyE0gIy15-onS21H-f8WlILXQ9uUPnQ8xA2T_HoRqhG9eF97Eb7IljQCgvmIlNA75kInMVoFP4Cd0AngwQA99sk8Ohj6ejd2zNsZFvSIDS_5J-RgRgwYUlAQSn-kgeIzy8ek8UhCpJ5ZtxSpdYQkJVLB1GsfevvbuFFsuOP-ia1Svf-NyDrxptczT-IS340yVR-cHKJginV4flFVTVKw5GOZJhNMkm8GM-m4cH68RmN8QXh9gF4qPK81NcdlcLEtuW9iTtNKtXSS6zQSiV7y94dEVO_bxlD8jBsn6fN8-Vt-Bmq4LSf3YROa2IYBAJmuzOliUFyyumDKL_Y6-dlXWQJZ6DyPOCZGJw-2eIpRAqNGDPIB_-JCBpO15wbopQVXsc3QSK_v62somV86yxVHVXx623GSSfs8KDQ72RC2wP6AhbFQk4Fx2Mj_MZD77mutM4D2MPNbfnCQRdmkK6BYYji6l7YLckoQJgJ34LQO25EO5_uNeZe2-8rLp2dDszHnq9FHQspA4WDuQ_7IZMRiFc1MhAstQuaIP2XRvC7bUyL4FlcxYBB0JWxbyrKl74GhPpY37S5exF3T4GoQnsEDTppKL2SQpeUtuNtC3cpDeCiIFgshLDkAtBItCvsgLDL9cwA13lUAG9a3UAxnAAjGbhjZGyDNZ00Md-JRnMVvdIQH7XIwOuAf3VxPwX2Bjv2SlK8JAAh5gJLLHZ77Nr_Lg3gSh2IoWeGX1PgAIkwgSufe_pcV1abHgdFMZY.8Jrc3_AXdsTm8MsILc5bJQ</password>
+
+      <!-- Option 2: Use environment variable for token -->
+      <!--<password>${env:CODEARTIFACT_AUTH_TOKEN}</password> -->
+    </server>
+  </servers>
+
+
+
+</settings>
