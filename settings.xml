@@ -3,25 +3,21 @@
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
                               https://maven.apache.org/xsd/settings-1.0.0.xsd">
 
-  <!-- =========================
-       SERVER AUTHENTICATION
-       ========================= -->
+  <!-- Authentication to CodeArtifact repository -->
   <servers>
     <server>
-      <id>csa-artifactory</id>
+      <id>codeartifact</id>
       <username>aws</username>
       <password>${CODEARTIFACT_TOKEN}</password>
     </server>
   </servers>
 
-  <!-- =========================
-       MIRRORS
-       ========================= -->
+  <!-- Mirror ONLY our CodeArtifact repo -->
   <mirrors>
     <mirror>
-      <id>csa-artifactory-mirror</id>
+      <id>codeartifact-mirror</id>
       <url>https://csatechlabs-artifactory-851725569228.d.codeartifact.us-east-1.amazonaws.com/maven/csa-artifactory/</url>
-      <mirrorOf>*</mirrorOf>
+      <mirrorOf>codeartifact</mirrorOf>
     </mirror>
   </mirrors>
 
