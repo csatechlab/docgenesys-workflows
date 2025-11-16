@@ -1,0 +1,64 @@
+name: build-and-push
+
+on:
+  workflow_call:
+    inputs:
+      image_name:
+        required: true
+        type: string
+      image_tag:
+        required: true
+        type: string
+      branch_name:
+        required: true
+        type: string
+    secrets:
+      NPD_AWS_ACCESS_KEY_ID:
+        required: true
+      NPD_AWS_SECRET_ACCESS_KEY:
+        required: true
+      NPD_AWS_REGION:
+        required: true
+      NPD_AWS_ACCOUNT_ID:
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.branch_name }}
+
+      - name: Setup JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.NPD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.NPD_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.NPD_AWS_REGION }}
+
+      - name: Login to CodeArtifact
+        run: |
+          aws codeartifact login \
+            --tool maven \
+            --repository csa-artifactory \
+            --domain csatechlabs-artifactory \
+            --domain-owner ${{ secrets.NPD_AWS_ACCOUNT_ID }}
+
+      - name: Build with Maven
+        run: mvn clean install -DskipTests
+
+      - name: Build Docker Image
+        run: docker build -t ${{ secrets.NPD_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.NPD_AWS_REGION }}.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }} .
+
+      - name: Push Docker Image
+        run: |
+          aws ecr get-login-password --region ${{ secrets.NPD_AWS_REGION }} |
+          docker login --username AWS --password-stdin ${{ secrets.NPD_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.NPD_AWS_REGION }}.amazonaws.com
+          docker push ${{ secrets.NPD_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.NPD_AWS_REGION }}.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }}
