@@ -78,7 +78,7 @@ jobs:
       - name: Copy central Maven settings.xml
         run: |
           mkdir -p ~/.m2
-          cp settings.xml ~/.m2/settings.xml
+          cp workflow-repo/settings.xml ~/.m2/settings.xml
 
       # ---------------------------------------------------------------
       # 6. Configure AWS creds for CodeArtifact
