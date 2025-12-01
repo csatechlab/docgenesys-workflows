@@ -48,6 +48,14 @@ jobs:
           ref: ${{ inputs.target_branch }}
           fetch-depth: 0
 
+       # Checkout this workflow repository (to access settings.xml)
+      - name: Checkout workflow repository
+        uses: actions/checkout@v3
+        with:
+          repository: csatechlab/docgenesys-workflows
+          ref: main
+          path: workflow-repo    
+
       # ---------------------------------------------------------------
       # 2. Install JDK 21 for compilation
       # ---------------------------------------------------------------
