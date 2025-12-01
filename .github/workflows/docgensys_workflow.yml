@@ -113,9 +113,11 @@ jobs:
             echo "❌ Unable to fetch CodeArtifact token"
             exit 1
           fi
+          
+          # echo "token=$TOKEN" >> $GITHUB_OUTPUT
 
           # Inject token into settings.xml
-          sed -i "s|\${CODEARTIFACT_TOKEN}|${{ steps.auth.outputs.token }}|g" ~/.m2/settings.xml
+          sed -i "s|\${CODEARTIFACT_TOKEN}|$TOKEN|g" ~/.m2/settings.xml
 
       # ---------------------------------------------------------------
       # 8. Build & Publish artifact to CodeArtifact
