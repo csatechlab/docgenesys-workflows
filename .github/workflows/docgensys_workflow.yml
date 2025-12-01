@@ -1,95 +1,71 @@
-name: build-and-push
+name: Publish Maven Artifact to AWS CodeArtifact
 
 on:
   workflow_call:
     inputs:
-      image_name:
+      version:
         required: true
         type: string
-      image_tag:
+      repo_endpoint:
         required: true
         type: string
-      branch_name:
+      domain:
+        required: true
+        type: string
+      domain_owner:
         required: true
         type: string
     secrets:
-      NPD_AWS_ACCESS_KEY_ID:
+      AWS_ACCESS_KEY_ID:
         required: true
-      NPD_AWS_SECRET_ACCESS_KEY:
-        required: true
-      NPD_AWS_REGION:
-        required: true
-      NPD_AWS_ACCOUNT_ID:
+      AWS_SECRET_ACCESS_KEY:
         required: true
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
+
     steps:
+      - uses: actions/checkout@v4
 
-      # 1. Checkout caller repo
-      - name: Checkout source repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.branch_name }}
-
-      # 2. Checkout this workflow repository (to access settings.xml)
-      - name: Checkout workflow repository
-        uses: actions/checkout@v3
-        with:
-          repository: csatechlab/docgenesys-workflows
-          ref: main
-          path: workflow-repo
-
-      # 3. Setup Java
-      - name: Setup JDK
-        uses: actions/setup-java@v3
+      # Install JDK for Maven build
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      # 4. Configure AWS creds
-      - name: Configure AWS
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.NPD_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.NPD_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.NPD_AWS_REGION }}
-
-      # 5. Get CodeArtifact Token
-      - name: Get CodeArtifact Token
-        id: codeartifact
+      # Apply version to pom.xml
+      - name: Update version in pom.xml
         run: |
-          TOKEN=$(aws codeartifact get-authorization-token \
-            --domain csatechlabs-artifactory \
-            --domain-owner ${{ secrets.NPD_AWS_ACCOUNT_ID }} \
-            --query authorizationToken \
-            --output text)
-          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+          mvn versions:set -DnewVersion="${{ inputs.version }}"
+          mvn versions:commit
 
-      # 6. Copy settings.xml and replace token
-      - name: Configure Maven settings.xml
+      # Place the central settings.xml
+      - name: Copy Maven settings.xml
         run: |
           mkdir -p ~/.m2
-          cp workflow-repo/settings.xml ~/.m2/settings.xml
-          sed -i "s|\${CODEARTIFACT_TOKEN}|${{ steps.codeartifact.outputs.token }}|g" ~/.m2/settings.xml
+          cp settings.xml ~/.m2/settings.xml
 
-      # 7. Build using Maven + CodeArtifact
-      - name: Build (Maven)
-        run: mvn -s ~/.m2/settings.xml clean install -DskipTests
-        working-directory: ${{ github.workspace }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-      # 8. Build Docker Image
-      - name: Build Docker Image
+      # Pull the CodeArtifact token and substitute into settings.xml
+      - name: Inject CodeArtifact token
+        id: auth
         run: |
-          docker build -t \
-            ${{ secrets.NPD_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.NPD_AWS_REGION }}.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }} .
+          TOKEN=$(aws codeartifact get-authorization-token \
+            --domain "${{ inputs.domain }}" \
+            --domain-owner "${{ inputs.domain_owner }}" \
+            --query authorizationToken --output text)
 
-      # 9. Push Docker Image
-      - name: Push Docker Image
-        run: |
-          aws ecr get-login-password --region ${{ secrets.NPD_AWS_REGION }} |
-          docker login --username AWS --password-stdin \
-          ${{ secrets.NPD_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.NPD_AWS_REGION }}.amazonaws.com
-          docker push \
-            ${{ secrets.NPD_AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.NPD_AWS_REGION }}.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }}
+          # Replace TOKEN placeholder inside settings.xml
+          sed -i "s|CODEARTIFACT_TOKEN|$TOKEN|g" ~/.m2/settings.xml
+
+      - name: Build & Deploy
+        run: mvn clean deploy -DskipTests \
+          -DaltDeploymentRepository=aws::default::${{ inputs.repo_endpoint }}
